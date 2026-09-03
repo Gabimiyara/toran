@@ -9,9 +9,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     UniqueConstraint,
-    ForeignKeyConstraint
+    ForeignKeyConstraint,
+    CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.sql import func
 import uuid
 
@@ -141,8 +142,12 @@ class Lesson(Base):
             "group_id",
             name="uq_lesson_id_group"
         ),
+        CheckConstraint(
+            "days_of_week <@ ARRAY[0,1,2,3,4,5,6]",
+            name="ck_lesson_days_of_week"
+        )
     )
-
+    
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -175,6 +180,11 @@ class Lesson(Base):
         UUID(as_uuid=True),
         ForeignKey("locations.id"),
         nullable=True
+    )
+    
+    days_of_week = Column(
+        ARRAY(Integer),
+        nullable=False
     )
 
     is_active = Column(
@@ -338,6 +348,11 @@ class LessonWeek(Base):
             "week_start_date",
             name="uq_lesson_week"
         ),
+        ForeignKeyConstraint(
+            ["roster_id", "lesson_id"],
+            ["roster.id", "roster.lesson_id"],
+            name="fk_lesson_week_roster_same_lesson"
+        ),
     )
 
     id = Column(
@@ -359,7 +374,6 @@ class LessonWeek(Base):
 
     roster_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("roster.id"),
         nullable=False
     )
 
